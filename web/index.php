@@ -1,14 +1,20 @@
 <?php
+//Allow PHP's built-in server to serve our static content in local dev:
+if (php_sapi_name() === 'cli-server' && is_file(__DIR__.'/static'.preg_replace('#(\?.*)$#','', $_SERVER['REQUEST_URI']))
+   ) {
+  return false;
+}
+
 // web/index.php
 require_once __DIR__.'/../vendor/autoload.php';
 
 $app = new Silex\Application();
 
-// mainly to run local host
-$filename = __DIR__.preg_replace('#(\?.*)$#', '', $_SERVER['REQUEST_URI']);
-if (php_sapi_name() === 'cli-server' && is_file($filename)) {
-    return false;
-}
+
+// Register Twig provider and define a path for twig templates
+$app->register(new Silex\Provider\TwigServiceProvider(), array(
+    'twig.path' => __DIR__.'/views',
+));
 
 // ... definitions
 $toys = array(
@@ -27,8 +33,25 @@ $toys = array(
 );
 
 
-$app->get('/', function() use ($toys) {
- return json_encode($toys);
+// Home page
+$app->get('/', function() use($app) {
+    return $app['twig']->render('index.html');
+})->bind('index');
+
+
+$app->get('/api/bearing/shaftsize/{queryType}', function($queryType) use ($toys) {
+    // radial
+    // 4point
+    // angular
+    return $queryType;
+});
+
+$app->get('/api/bearing/search/{insideRadius}', function($insideRadius) use ($toys) {
+    return json_encode($toys);
+});
+
+$app->get('/api/bearing/search/{insideRadius}/{outsideRadius}', function($insideRadius, $outsideRadius) use ($toys) {
+    return json_encode($toys);
 });
 
 // run
